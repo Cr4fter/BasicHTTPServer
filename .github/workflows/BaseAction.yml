@@ -27,4 +27,4 @@ jobs:
     - name: Upload Test Results
       uses: actions/upload-artifact@v2.2.3
       with:
-        path: /*.trx
+        path: *.trx
