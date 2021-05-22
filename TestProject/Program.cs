@@ -14,10 +14,10 @@ namespace TestProject
             Console.ReadKey();
         }
 
-        private static BasicHTTPResponse halloweltRequest(HTTPRequest request)
+        private static HTTPResponse halloweltRequest(HTTPRequest request)
         {
             Console.WriteLine("Hallo Welt Request Received!");
-            return new BasicHTTPTextResponse("Hallo Welt");
+            return new HTTPTextResponse("Hallo Welt");
         }
     }
 }

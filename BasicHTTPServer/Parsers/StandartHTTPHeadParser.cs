@@ -1,4 +1,7 @@
-﻿using BasicHTTPServer.Helpers;
+﻿// // This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
+
+using BasicHTTPServer.Helpers;
 
 namespace BasicHTTPServer.Parsers
 {
@@ -6,12 +9,9 @@ namespace BasicHTTPServer.Parsers
     {
         public void ParseHead(string head, ref HTTPRequest request)
         {
-            string[] parts = head.Split(' ');
+            var parts = head.Split(' ');
 
-            if (parts.Length != 3)
-            {
-                request.MarkAsMalformed($"Expected 3 Part Header but found {parts.Length}");
-            }
+            if (parts.Length != 3) request.MarkAsMalformed($"Expected 3 Part Header but found {parts.Length}");
 
             //Request Type
             switch (parts[0])
@@ -47,22 +47,24 @@ namespace BasicHTTPServer.Parsers
                     request.ParsedType = RequestType.UNKNOWN;
                     break;
             }
+
             request.RawParsedType = parts[0];
 
             //Request URL
             request.RawRequestURL = parts[1];
-            string[] urlParts = request.RawRequestURL.Split('?');
+            var urlParts = request.RawRequestURL.Split('?');
             request.RequestURL = urlParts[0];
             if (urlParts.Length > 2)
             {
-                request.MarkAsMalformed($"Request URI has multiple Parameter Splitter. Max Allowed 1 found {urlParts.Length}. Full URI {request.RequestURL}");
+                request.MarkAsMalformed(
+                    $"Request URI has multiple Parameter Splitter. Max Allowed 1 found {urlParts.Length}. Full URI {request.RequestURL}");
             }
             else if (urlParts.Length == 2)
             {
-                string[] getParameters = urlParts[1].Split('&');
-                foreach (string parameter in getParameters)
+                var getParameters = urlParts[1].Split('&');
+                foreach (var parameter in getParameters)
                 {
-                    string[] paramParts = parameter.Split('=');
+                    var paramParts = parameter.Split('=');
                     if (paramParts.Length != 2)
                     {
                         request.MarkAsMalformed($"Failed to Parse GetParameter. full Parameter: {parameter}");
@@ -72,7 +74,8 @@ namespace BasicHTTPServer.Parsers
                     if (request.GetParameters.ContainsKey(paramParts[0])) //HTTP Pollution Check
                     {
                         request.GetParameters[paramParts[0]] = paramParts[1];
-                        request.MarkAsMalformed($"HTTP Pollution Detected! Multiple Get Parameters with the Name \"{paramParts[0]}\"");
+                        request.MarkAsMalformed(
+                            $"HTTP Pollution Detected! Multiple Get Parameters with the Name \"{paramParts[0]}\"");
                     }
                     else
                     {
@@ -86,9 +89,7 @@ namespace BasicHTTPServer.Parsers
             {
                 request.HTTPVersion = parts[2];
                 if (request.HTTPVersion != "HTTP/1.1")
-                {
                     request.MarkAsMalformed("The Server Currently only Supports HTTP v1 Requests.");
-                }
             }
         }
     }

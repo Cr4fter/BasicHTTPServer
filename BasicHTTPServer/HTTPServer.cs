@@ -1,4 +1,7 @@
-﻿using System;
+﻿// // This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
+
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -8,21 +11,22 @@ namespace BasicHTTPServer
 {
     public class HTTPServer
     {
-        public delegate BasicHTTPResponse RequestHandlerCallback(HTTPRequest request);
+        public delegate HTTPResponse RequestHandlerCallback(HTTPRequest request);
 
-        private int _port;
-
-        private TcpListener serverSocket;
-
-        public Dictionary<string, RequestHandlerCallback> RequestHandlers { private set; get; } = new Dictionary<string, RequestHandlerCallback>();
+        private readonly int _port;
 
         internal HTTPServerSettings _settings;
+
+        private TcpListener serverSocket;
 
         public HTTPServer(int port, HTTPServerSettings settings = null)
         {
             _port = port;
             _settings = settings ?? new HTTPServerSettings();
         }
+
+        public Dictionary<string, RequestHandlerCallback> RequestHandlers { get; } =
+            new Dictionary<string, RequestHandlerCallback>();
 
         public void StartListening()
         {
@@ -38,8 +42,8 @@ namespace BasicHTTPServer
 
         private void AcceptAsync(IAsyncResult ar)
         {
-            Socket clientSocket = serverSocket.EndAcceptSocket(ar);
-            HTTPRequestHandler Request = new HTTPRequestHandler(clientSocket, this);
+            var clientSocket = serverSocket.EndAcceptSocket(ar);
+            var Request = new HTTPRequestHandler(clientSocket, this);
             serverSocket.BeginAcceptSocket(AcceptAsync, serverSocket);
         }
     }

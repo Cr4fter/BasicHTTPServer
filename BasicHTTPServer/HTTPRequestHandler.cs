@@ -1,11 +1,16 @@
-﻿using System;
+﻿// // This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
+
+using System;
 using System.Net.Sockets;
-using System.Security.Claims;
 using System.Text;
 using BasicHTTPServer.Response;
 
 namespace BasicHTTPServer
 {
+    /// <summary>
+    /// The standard HTTP Request Types and <see cref="UNKNOWN"/> to signal a non standard Request type.
+    /// </summary>
     public enum RequestType
     {
         GET,
@@ -20,13 +25,16 @@ namespace BasicHTTPServer
         UNKNOWN
     }
 
+    /// <summary>
+    /// This class is used to handle incoming HTTP Requests.
+    /// </summary>
     public class HTTPRequestHandler
     {
-        private BasicHTTPServer.HTTPServer _server;
-        private Socket _connection;
-        private byte[] buffer = new byte[2048];
+        private readonly Socket _connection;
+        private readonly HTTPServer _server;
+        private readonly byte[] buffer = new byte[2048];
 
-        public HTTPRequestHandler(Socket connection, BasicHTTPServer.HTTPServer server)
+        public HTTPRequestHandler(Socket connection, HTTPServer server)
         {
             _server = server;
             _connection = connection;
@@ -35,37 +43,41 @@ namespace BasicHTTPServer
 
         private void BeginReceive(IAsyncResult ar)
         {
-            int result = _connection.EndReceive(ar);
-            if (IsConnected(_connection) == false)
+            var result = _connection.EndReceive(ar);
+            if (IsConnected() == false)
             {
                 Console.WriteLine("Connection Lost!");
                 return;
             }
-            handleRequest(result);
+
+            HandleRequest(result);
         }
 
-        private void handleRequest(int length)
+        /// <summary>
+        /// This function is responsible to parse the incoming HTTP Requests, call the responsible callback and send back the answer.
+        /// </summary>
+        /// <param name="length"></param>
+        private void HandleRequest(int length)
         {
-            string messageContent = Encoding.UTF8.GetString(buffer, 0, length);
+            var messageContent = Encoding.UTF8.GetString(buffer, 0, length);
             Console.ForegroundColor = ConsoleColor.Blue;
             Console.WriteLine(messageContent);
             Console.WriteLine();
             Console.ResetColor();
             messageContent = messageContent.Replace("\r\n", "\n");
-            string[] lines = messageContent.Split('\n');
+            var lines = messageContent.Split('\n');
 
-            int parsingState = 0; //Start with Headers
+            var parsingState = 0; //Start with Headers
 
-            HTTPRequest request = new HTTPRequest();
+            var request = new HTTPRequest();
 
-            for (int i = 0; i < lines.Length; i++)
-            {
+            for (var i = 0; i < lines.Length; i++)
                 //GET /hallowelt HTTP/1.1
                 if (parsingState == 0)
                 {
                     _server._settings.HeadParser.ParseHead(lines[i], ref request);
                     parsingState++;
-                } 
+                }
                 else if (parsingState == 1)
                 {
                     if (string.IsNullOrWhiteSpace(lines[i]))
@@ -73,40 +85,33 @@ namespace BasicHTTPServer
                         parsingState++;
                         continue;
                     }
-                    int split = lines[i].IndexOf(':');
+
+                    var split = lines[i].IndexOf(':');
 
                     var name = lines[i].Substring(0, split);
                     var value = lines[i].Substring(split + 2, lines[i].Length - split - 2);
-                    
+
                     request.Headers.Add(name, value);
 
-                    if (name == "Cookie")
-                    {
-                        _server._settings.CookieParser.ParseCookies(value, ref request);
-                    }
+                    if (name == "Cookie") _server._settings.CookieParser.ParseCookies(value, ref request);
                 }
                 else if (parsingState == 2)
                 {
                     //TODO Parse Body
                 }
-            }
 
-            BasicHTTPResponse HTTPresponse;
+            HTTPResponse HTTPresponse;
 
             try
             {
-                if (_server.RequestHandlers.TryGetValue(request.RequestURL, out BasicHTTPServer.HTTPServer.RequestHandlerCallback calback))
-                {
+                if (_server.RequestHandlers.TryGetValue(request.RequestURL, out var calback))
                     HTTPresponse = calback(request);
-                }
                 else
-                {
-                    HTTPresponse = new BasicHTTP404Response();
-                }
+                    HTTPresponse = new HTTP404Response();
             }
-            catch (Exception exception)
+            catch (Exception)
             {
-                HTTPresponse = new BasicHTTP500Response();
+                HTTPresponse = new HTTP500Response();
             }
 
             //string responseStr =
@@ -130,13 +135,20 @@ namespace BasicHTTPServer
             _connection.Dispose();
         }
 
-        public bool IsConnected(Socket socket)
+        /// <summary>
+        /// Polls the socket to detect a closed connection.
+        /// </summary>
+        /// <returns>True if the connection is still open.</returns>
+        public bool IsConnected()
         {
             try
             {
-                return !(socket.Poll(1, SelectMode.SelectRead) && socket.Available == 0);
+                return !(_connection.Poll(1, SelectMode.SelectRead) && _connection.Available == 0);
             }
-            catch (SocketException) { return false; }
+            catch (SocketException)
+            {
+                return false;
+            }
         }
     }
 }
