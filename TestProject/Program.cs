@@ -8,7 +8,7 @@ namespace TestProject
     {
         static void Main(string[] args)
         {
-            BasicHTTPServer.HTTPServer server = new BasicHTTPServer.HTTPServer(8080);
+            HTTPServer server = new HTTPServer(8080);
             server.AddHandler("/hallowelt", halloweltRequest);
             server.StartListening();
             Console.ReadKey();
